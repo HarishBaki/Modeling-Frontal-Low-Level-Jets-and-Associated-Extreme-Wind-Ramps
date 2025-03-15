@@ -55,77 +55,37 @@ def extract_u_v(root_dir, case_dir,run, run_dir,dates_range=None,levels=None,loc
     location: list of two floats, latitude and longitude of the location to extract
     '''
     from scipy.interpolate import interp1d
-    if (case_dir == 'FLLJ_1' and run == 8):
-        file = glob.glob(f'{root_dir}/{case_dir}/{run_dir}/uvmet_interp*')[0]
-        chunks={"Time": 1,"south_north": -1,"west_east": -1}
-        ds = xr.open_dataset(file,chunks=chunks)
-        # Extract XLONG and XLAT coordinates
-        XLONG = ds.XLONG.values
-        XLAT = ds.XLAT.values
-        z = ds.level.values
+    file = glob.glob(f'{root_dir}/WES_dataset/WRF_simulations/{case_dir}/{run_dir}/U_V.nc')[0]
+    chunks={"Time": 1,"south_north": -1,"west_east": -1}
+    ds = xr.open_dataset(file,chunks=chunks)
+    XLAT = ds.XLAT.values
+    XLONG = ds.XLONG.values
+    z = ds.num_z_levels_stag.values
+    if dates_range is not None:
+        if isinstance(dates_range,list):
+            ds = ds.sel(Time=slice(*dates_range))
+        else:
+            ds = ds.sel(Time=dates_range) 
+    if location is not None:
+        ind_y,ind_x = find_nearest_indice(XLAT, XLONG, location[0],location[1])
+        ds = ds.isel(south_north=ind_y,west_east=ind_x)
 
-        if dates_range is not None:
-            if isinstance(dates_range,list):
-                ds = ds.sel(Time=slice(*dates_range))
+    # Extract the data at the specified time and vertical level
+    u_data = ds.U_ZL
+    v_data = ds.V_ZL
+
+    if levels is not None:
+        if isinstance(levels,list):
+            u_data = u_data.sel(num_z_levels_stag=slice(*levels))
+            v_data = v_data.sel(num_z_levels_stag=slice(*levels))
+        else:
+            if levels in z:
+                u_data = u_data.sel(num_z_levels_stag=levels)
+                v_data = v_data.sel(num_z_levels_stag=levels)
             else:
-                ds = ds.sel(Time=dates_range)
-        Times = ds.Time
-        if location is not None:
-            ind_y,ind_x = find_nearest_indice(XLAT, XLONG, location[0],location[1])
-            ds = ds.isel(south_north=ind_y,west_east=ind_x)
+                u_data = u_data.interp(num_z_levels_stag=levels,method='linear')
+                v_data = v_data.interp(num_z_levels_stag=levels,method='linear')
 
-        u_data = ds.uvmet_interp.sel(u_v='u')
-        v_data = ds.uvmet_interp.sel(u_v='v')
-
-        if levels is not None:
-            if isinstance(levels,list):
-                u_data = u_data.sel(level=slice(*levels))
-                v_data = v_data.sel(level=slice(*levels))
-            else:
-                # check if levels exist in z
-                if levels in z:
-                    u_data = u_data.sel(level=levels)
-                    v_data = v_data.sel(level=levels)
-                else:
-                    u_data = u_data.interp(level=levels,method='linear')
-                    v_data = v_data.interp(level=levels,method='linear')
-    else:
-        file = glob.glob(f'{root_dir}/{case_dir}/{run_dir}/auxhist22_{domains[run-1]}*')[0]
-        chunks={"Time": 1,"south_north": -1,"west_east": -1}
-        ds = xr.open_dataset(file,chunks=chunks)
-        Times = pd.to_datetime(np.char.decode(ds.Times, 'utf-8'), format='%Y-%m-%d_%H:%M:%S')
-        z = ds.Z_ZL[0,...].values
-        ds = ds.assign_coords(Time=Times,num_z_levels_stag=z)
-        # Extract XLONG and XLAT coordinates
-        XLONG = ds.XLONG[0,...].values
-        XLAT = ds.XLAT[0,...].values
-
-        if dates_range is not None:
-            if isinstance(dates_range,list):
-                ds = ds.sel(Time=slice(*dates_range))
-            else:
-                ds = ds.sel(Time=dates_range) 
-        Times = ds.Time
-        if location is not None:
-            ind_y,ind_x = find_nearest_indice(XLAT, XLONG, location[0],location[1])
-            ds = ds.isel(south_north=ind_y,west_east=ind_x)
-
-        # Extract the data at the specified time and vertical level
-        u_data = ds.U_ZL
-        v_data = ds.V_ZL
-
-        if levels is not None:
-            if isinstance(levels,list):
-                u_data = u_data.sel(num_z_levels_stag=slice(*levels))
-                v_data = v_data.sel(num_z_levels_stag=slice(*levels))
-            else:
-                if levels in z:
-                    u_data = u_data.sel(num_z_levels_stag=levels)
-                    v_data = v_data.sel(num_z_levels_stag=levels)
-                else:
-                    u_data = u_data.interp(num_z_levels_stag=levels,method='linear')
-                    v_data = v_data.interp(num_z_levels_stag=levels,method='linear')
-    
     return u_data, v_data, XLONG, XLAT
 
 def wind_speed(ds1,ds2):
