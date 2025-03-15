@@ -1,0 +1,5 @@
+# ignore .nc files, but exclude borssele_wind_turbines.nc
+*.nc
+!borssele_wind_turbines.nc
+WES_dataset/Elia_dataset
+WES_dataset/Lidar_observations
