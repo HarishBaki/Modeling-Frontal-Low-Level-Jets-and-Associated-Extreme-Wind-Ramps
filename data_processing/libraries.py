@@ -3,9 +3,8 @@ import pandas as pd
 import numpy as np
 from scipy.stats import weibull_min
 import time
-import glob
-
-root_dir = '/media/ssd_4tb_qvo/EU_SCORES_project/WRFV4.4/FLLJ/'
+import glob, os
+root_dir = '/home/harish/Desktop/Modeling-Frontal-Low-Level-Jets-and-Associated-Extreme-Wind-Ramps/' if os.path.exists('/home/harish/Desktop/Modeling-Frontal-Low-Level-Jets-and-Associated-Extreme-Wind-Ramps/') else '/media/ssd_4tb_qvo/Modeling-Frontal-Low-Level-Jets-and-Associated-Extreme-Wind-Ramps/'
 domains = ['d03', 'd02', 'd02', 'd02','d01','d02','d01','d03','d02', 'd02', 'd02','d01','d02','d01','d01','d01','d01']
 event_periods = [['2016-02-21T18:00','2016-02-22T18:00'],['2016-03-03T18:00','2016-03-04T18:00'],
                  ['2016-02-09-T00:00','2016-02-10-T00:00'],['2017-01-09-T12:00','2017-01-10-T12:00'],
